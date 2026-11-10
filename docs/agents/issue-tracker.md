@@ -1,6 +1,8 @@
 # Issue tracker: GitHub
 
-Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
+Issues and specs for this repo live as GitHub issues on **`ivypi-cc/portage`** —— 这个 fork
+是唯一事实源，上游 `SimonGino/portage` 只读（PO 2026-11-10 定，[ivypi-cc/portage#2](https://github.com/ivypi-cc/portage/issues/2)）。
+Use the `gh` CLI for all operations.
 
 ## Conventions
 
@@ -11,7 +13,13 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
 
-Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone.
+clone 里有两个 remote：`fork` = `ivypi-cc/portage`（可写，票就在这）、`origin` = 上游
+`SimonGino/portage`（只读参照，`ivypi-cc` 对它没有写权限）。默认仓已在本地钉成 fork：
+`gh repo set-default ivypi-cc/portage`（写的是本地 git config，不碰远端）。换机器或重新
+clone 之后先跑一次这条再开票——否则 `gh` 会去认 `origin`，而那个仓开票会 403。
+
+**读历史时注意号段**：口径层、提交信息与旧 PR 里的裸 `#NNN` 指的都是**上游**的号，照上游
+解；今天起新建的票用本 fork 的号，两边号段互不相干，别拿 fork 的 `#17` 去上游找。
 
 ## GitHub Projects：只读视图，非事实源
 
