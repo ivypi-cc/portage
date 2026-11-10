@@ -39,7 +39,7 @@ gofmt -w .                # CI 有独立 gofmt 闸，未格式化即红（vet �
 
 ## Agent skills
 
-- **Issue tracker**：GitHub Issues（`SimonGino/portage`，gh CLI）——[`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md)
+- **Issue tracker**：GitHub Issues（**`ivypi-cc/portage`**，gh CLI）——[`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md)。上游 `SimonGino/portage` 是**只读**参照：不在那开票、不评论、不改标签、不动 PR（PO 2026-11-10 定，[#2](https://github.com/ivypi-cc/portage/issues/2)）
 - **Triage 标签**：五个默认角色标签 + 本仓库另加的 `blocked`——[`docs/agents/triage-labels.md`](docs/agents/triage-labels.md)
 - **Domain docs**：探索代码前先读的术语与决策——[`docs/agents/domain.md`](docs/agents/domain.md)
-- **PR AI review**：参审 reviewer 只有 CodeRabbit 与 Codex。Gemini 未接入本仓库（PO 2026-09-29 裁定去掉），不发 `/gemini review`、不等它，也不记作覆盖缺口
+- **PR AI review**：参审 reviewer 只有 CodeRabbit 与 Codex。Gemini 未接入本仓库（PO 2026-09-29 裁定去掉），不发 `/gemini review`、不等它，也不记作覆盖缺口。这两个 bot 只装在上游那侧，**本 fork 没接入**：PR 开在 `ivypi-cc/portage` 上不会有 bot review，别把它当成阻塞（`/review` 与 `@codex review` 只对上游那条 PR 有意义）
