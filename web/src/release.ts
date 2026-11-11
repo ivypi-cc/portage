@@ -2,8 +2,8 @@
 // 服务端不轮询、不 phone home。结果在 localStorage 缓存一天——未鉴权 60 次/时/IP，
 // 每开一次面板问一次会把同一出口 IP 后面的几台机器一起打进限额。
 
-export const REPO = 'https://github.com/SimonGino/portage'
-const API = 'https://api.github.com/repos/SimonGino/portage/releases/latest'
+export const REPO = 'https://github.com/ivypi-cc/portage'
+const API = 'https://api.github.com/repos/ivypi-cc/portage/releases/latest'
 const KEY = 'portage.latest-release'
 const TTL = 24 * 60 * 60 * 1000
 

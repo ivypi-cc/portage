@@ -30,7 +30,7 @@ var (
 )
 
 // releases 是 GitHub Release 的根；PORTAGE_DOWNLOAD_BASE 作为前缀拼在它前面（口径层 v1.38 ⑪）。
-const releases = "https://github.com/SimonGino/portage/releases"
+const releases = "https://github.com/ivypi-cc/portage/releases"
 
 var versionRe = regexp.MustCompile(`^\d+\.\d+\.\d+$`)
 
