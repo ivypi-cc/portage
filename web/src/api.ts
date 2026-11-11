@@ -372,6 +372,12 @@ export interface Channel {
    */
   headers: Record<string, string>
   /**
+   * 渠道级消息端点路径覆盖（#175；同 Headers 管理端可读可写）：给某个协议填了完整
+   * 子路径，出站拼接用它替换固定的 /v1/<protocol>——只覆盖三个消息端点，
+   * /v1/models 与 count_tokens 不覆盖。键缺席或空串 = 未覆盖（服务端 omitempty）。
+   */
+  path_override: Partial<Record<Protocol, string>>
+  /**
    * 可用/停用凭证计数（口径层 v0.38）。这里只有计数，没有凭证值——值由凭证池那一个
    * 接口单独发（v0.47）。
    * 用计数而不是「有没有」：摘光不设特例，3 把里坏了 2 把时布尔显示的仍是「有凭证」，

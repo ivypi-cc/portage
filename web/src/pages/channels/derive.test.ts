@@ -14,6 +14,9 @@ import {
   listedOn,
   maxConcurrencyOf,
   normalizeProtocols,
+  overrideValues,
+  overridesDirty,
+  overridesPayload,
   parseTokens,
   primaryCredential,
   protocolsToAdd,
@@ -40,6 +43,7 @@ function ch(over: Partial<Channel>): Channel {
     provider: '',
     disabled: false,
     headers: {},
+    path_override: {},
     enabled_keys: 1,
     disabled_keys: 0,
     models: [],
@@ -228,6 +232,34 @@ describe('上游设置表单', () => {
     expect(settingsDirty(c, same, false)).toBe(false)
     expect(settingsDirty(c, same, true)).toBe(true)
     expect(settingsDirty(c, { ...same, compaction: false, name: 'renamed' }, false)).toBe(true)
+  })
+})
+describe('路径覆盖（#175 / #5）', () => {
+  it('库里值摆成三协议编辑值，没填的归空串', () => {
+    expect(overrideValues(undefined)).toEqual({ openai: '', openai_responses: '', anthropic: '' })
+    expect(overrideValues({ openai: '/v1/chat/completions' })).toEqual({
+      openai: '/v1/chat/completions',
+      openai_responses: '',
+      anthropic: '',
+    })
+  })
+
+  it('payload 恒带三键并去首尾空白：空串照发，空 = 清掉那一格', () => {
+    expect(overridesPayload({ openai: ' /a ', openai_responses: '', anthropic: '   ' })).toEqual({
+      openai: '/a',
+      openai_responses: '',
+      anthropic: '',
+    })
+  })
+
+  it('改动判据按 trim 后比：空白差不算改动，值变了或新填了才算', () => {
+    const saved = { openai: '/x', anthropic: '/y' }
+    expect(overridesDirty(saved, { openai: ' /x ', openai_responses: '', anthropic: '/y ' })).toBe(false)
+    expect(overridesDirty(saved, { openai: '/x', openai_responses: '', anthropic: '/y' })).toBe(false)
+    expect(overridesDirty(saved, { openai: '/x', openai_responses: '/new', anthropic: '/y' })).toBe(true)
+    expect(overridesDirty(saved, { openai: '/x', openai_responses: '', anthropic: '' })).toBe(true)
+    expect(overridesDirty({}, { openai: '', openai_responses: '', anthropic: '' })).toBe(false)
+    expect(overridesDirty(undefined, { openai: '/a', openai_responses: '', anthropic: '' })).toBe(true)
   })
 })
 

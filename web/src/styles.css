@@ -649,6 +649,21 @@ button.acct-avatar:hover {
   align-items: center;
 }
 
+/* 消息端点路径覆盖的一行（#175 / #5）：协议短名定宽 + 路径框，三行同列对齐；
+   占位摆的是该协议的默认子路径，填了就用填的。 */
+.ovr-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.ovr-proto {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .models-empty {
   margin: 8px 0;
 }
