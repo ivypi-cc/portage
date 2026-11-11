@@ -2,8 +2,8 @@
 # portage 安装脚本：探平台 → 下载 GitHub Release 的 tar.gz → sha256 校验 → 放进安装目录。
 # 只做这四步：不注册 systemd、不建用户、不建目录，结尾打印下一步。
 #
-#   curl -fsSL https://raw.githubusercontent.com/SimonGino/portage/main/install.sh | sh
-#   curl -fsSL https://raw.githubusercontent.com/SimonGino/portage/main/install.sh | sh -s -- 0.1.1   # 钉版本
+#   curl -fsSL https://raw.githubusercontent.com/ivypi-cc/portage/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/ivypi-cc/portage/main/install.sh | sh -s -- 0.1.1   # 钉版本
 #
 # 环境变量：
 #   PORTAGE_VERSION        要装的版本（与第一个参数等价，参数优先）；缺省取最新 Release
@@ -12,7 +12,7 @@
 #                          经代理时 checksums.txt 与包同源同代理，校验防不了代理本身作恶
 set -eu
 
-repo="https://github.com/SimonGino/portage"
+repo="https://github.com/ivypi-cc/portage"
 base="${PORTAGE_DOWNLOAD_BASE:-}"
 dir="${PORTAGE_INSTALL_DIR:-/usr/local/bin}"
 version="${1:-${PORTAGE_VERSION:-}}"

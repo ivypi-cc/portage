@@ -51,7 +51,7 @@ func sum(b []byte) string {
 }
 
 // fakeRelease 起一个假的 GitHub：base 与 PORTAGE_DOWNLOAD_BASE 同为前缀语义，所以请求路径
-// 就是 `/https://github.com/SimonGino/portage/releases/...`。files 的键是 releases 之后那段。
+// 就是 `/https://github.com/ivypi-cc/portage/releases/...`。files 的键是 releases 之后那段。
 func fakeRelease(t *testing.T, files map[string][]byte) string {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
