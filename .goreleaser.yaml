@@ -72,7 +72,8 @@ changelog:
 
 release:
   github:
-    owner: SimonGino
+    # fork-only（11-10 裁）：release 建在触发 workflow 的这个仓库名下。显式写 ivypi-cc，
+    # 不靠 GITHUB_REPOSITORY 兜底——写死与上面 name_template 的理由同一条。
+    owner: ivypi-cc
     name: portage
-  # 预发布 tag（v1.0.0-rc.1）自动标 prerelease，releases/latest 不会指到它。
   prerelease: auto
