@@ -1,12 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
-import { api, AUTH_SCHEME_OPTIONS, declaredProtocols, firstBaseURL, joinBaseURLs, splitBaseURLs } from '../../api'
-import type { AuthScheme, BaseURLDraft, Channel, ChannelPreset } from '../../api'
+import {
+  api,
+  AUTH_SCHEME_OPTIONS,
+  declaredProtocols,
+  firstBaseURL,
+  joinBaseURLs,
+  PROTOCOL_LABEL,
+  PROTOCOL_ORDER,
+  PROTOCOL_PATH,
+  PROTOCOL_SHORT,
+  splitBaseURLs,
+} from '../../api'
+import type { AuthScheme, BaseURLDraft, Channel, ChannelPreset, Protocol } from '../../api'
 import { Confirm, ErrorBar, Field } from '../../ui'
 import { Picker, Segmented } from '../../fields'
 import { Avatar, vendorForChannel } from '../../icons'
 import { BaseURLFields } from './baseurl'
 import { LoginDialog } from './login'
-import { headerRows, headersDirty, headersOf, channelCreatePayload, isSubscriptionChannel, maxConcurrencyOf, presetPlans, settingsDirty } from './derive'
+import { headerRows, headersDirty, headersOf, overrideValues, overridesDirty, overridesPayload, channelCreatePayload, isSubscriptionChannel, maxConcurrencyOf, presetPlans, settingsDirty } from './derive'
 import type { HeaderRow } from './derive'
 import { IconX, IconKey } from '../../icons/acts'
 import { providerOptions, useProviders } from '../../prices'
@@ -61,8 +72,8 @@ export function ChannelForm({
   /** 编辑时给：删除渠道跟设置同住一个弹框，坐在保存对面。 */
   onDelete?: () => void
   /**
-   * 编辑时给：头那一笔已落库、后面设置那一笔失败时调，让调用方重拉渠道。不重拉的话
-   * 弹框关了再开会摆出旧头，下次改头再把旧值整组写回去（#167）。
+   * 编辑时给：额外出站头或路径覆盖那一笔已落库、后面设置那一笔失败时调，让调用方重拉
+   * 渠道。不重拉的话弹框关了再开会摆出旧值，下次改动再把旧值整组写回去（#167 / #5）。
    */
   onHeadersSaved?: () => void
 }) {
@@ -103,6 +114,11 @@ export function ChannelForm({
   const [authScheme, setAuthScheme] = useState<AuthScheme>(channel?.auth_scheme ?? preset?.auth_scheme ?? 'default')
   // 额外出站头（#137 / #167）：只在编辑态出现，单独一笔 PUT，其余字段写不碰它。
   const [headerList, setHeaderList] = useState<HeaderRow[]>(() => headerRows(channel?.headers ?? {}))
+  // 消息端点路径覆盖（#175 / #5）：一行一协议共三行，只在编辑态出现；与额外出站头
+  // 同是单独一笔整组覆盖写，留空即清掉那一格。三键恒发，请求体形状不随填没填变。
+  const [ovrValues, setOvrValues] = useState<Record<Protocol, string>>(() =>
+    overrideValues(channel?.path_override),
+  )
   // 「登录」开弹层前先建的那只渠道（#216）：null = 还没建。登录弹层按渠道 id 发号，
   // 渠道得先存在——点「登录」就用当前表单值先把渠道建出来，弹层关了再走 onSaved。
   const [loginChannelID, setLoginChannelID] = useState<number | null>(null)
@@ -136,7 +152,8 @@ export function ChannelForm({
       showCompaction,
     )
   const headersChanged = channel !== null && headersDirty(channel.headers, headerList)
-  const dirty = settingsChanged || headersChanged
+  const overridesChanged = channel !== null && overridesDirty(channel.path_override, ovrValues)
+  const dirty = settingsChanged || headersChanged || overridesChanged
 
   // 切套餐 = 换一套地址与它的 models.dev 标注（key 不通用，所以连标注一起换）；
   // 名字、认证头等人可能已改过的字段不动。
@@ -196,6 +213,7 @@ export function ChannelForm({
     e.preventDefault()
     setBusy(true)
     let headersSaved = false
+    let overrideSaved = false
     try {
       if (channel) {
         // 额外出站头是自己那一笔（#167），改了才发、先于设置发：它最可能被闸打回，
@@ -205,6 +223,14 @@ export function ChannelForm({
           if (dup) throw new Error(`额外出站头 "${dup}" 写了两行，同名只会剩一个`)
           await api.put(`/channels/${channel.id}/headers`, { headers })
           headersSaved = true
+        }
+        // 路径覆盖与头同一类写侧闸，紧随其后、仍先于设置发（#175 / #5）：改了才发，
+        // 整组覆盖，拒因原文进 ErrorBar。
+        if (overridesChanged) {
+          await api.put(`/channels/${channel.id}/path-override`, {
+            path_override: overridesPayload(ovrValues),
+          })
+          overrideSaved = true
         }
         // 编辑走「上游设置」这一笔意图写（#48 批2）：只发这张表单上有的字段，
         // base_url / key_mode / disabled 各有各的写点，这里不回传也回传不了。
@@ -229,7 +255,7 @@ export function ChannelForm({
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
-      if (headersSaved) onHeadersSaved?.()
+      if (headersSaved || overrideSaved) onHeadersSaved?.()
     } finally {
       setBusy(false)
     }
@@ -393,6 +419,33 @@ export function ChannelForm({
           <span className="field-hint">
             固定随转发、检测、拉模型列表一起发给上游的请求头，给「缺某个头就拒」的上游用（如 OpenCode Go 的
             x-opencode-session）；凭证、Content-Type、Host 这类网关自己写的头不能填。值明文显示，不是放密钥的地方
+          </span>
+        </div>
+      )}
+
+      {/* 消息端点路径覆盖（#175 / #5）：一行一协议共三行，行 = 协议短名 + 路径框，
+          占位即该协议的默认子路径，留空 = 用默认。闸全在服务端
+          ValidatePathOverrides，拒因原文进 ErrorBar，前端不另写一套；与额外出站头
+          同为编辑态专属、单独一笔。 */}
+      {channel && (
+        <div className="field">
+          <span className="field-label">消息端点路径覆盖</span>
+          {PROTOCOL_ORDER.map((p) => (
+            <div className="ovr-row" key={p}>
+              <span className="ovr-proto">{PROTOCOL_SHORT[p]}</span>
+              <input
+                className="mono"
+                aria-label={PROTOCOL_LABEL[p] + ' 路径覆盖'}
+                placeholder={PROTOCOL_PATH[p]}
+                value={ovrValues[p]}
+                onChange={(e) => setOvrValues((v) => ({ ...v, [p]: e.target.value }))}
+              />
+            </div>
+          ))}
+          <span className="field-hint">
+            出站拼接默认接固定的 /v1/messages · /v1/chat/completions · /v1/responses；给某协议填了完整子路径就改用你填的，
+            留空 = 用默认——为消息端点不在 /v1/&lt;protocol&gt; 形状的上游而设（如 …/backend-api/codex + /responses）。
+            GET /v1/models 与 count_tokens 不覆盖
           </span>
         </div>
       )}

@@ -357,6 +357,41 @@ export function headersDirty(saved: Record<string, string>, rows: HeaderRow[]): 
   return keys.length !== Object.keys(saved).length || keys.some((k) => saved[k] !== headers[k])
 }
 
+// ── 消息端点路径覆盖（#175 / #5）──────────────────────────────────────────
+
+/** 库里的路径覆盖摆成三协议编辑值：没填的归空串（服务端 omitempty，键可以缺席）。 */
+export function overrideValues(
+  saved: Partial<Record<Protocol, string>> | null | undefined,
+): Record<Protocol, string> {
+  return {
+    openai: saved?.openai ?? '',
+    openai_responses: saved?.openai_responses ?? '',
+    anthropic: saved?.anthropic ?? '',
+  }
+}
+
+/**
+ * 编辑值收成要发的请求体：三键恒带、逐份去首尾空白。空串照发——服务端是整组
+ * 覆盖，空 = 清掉那一格；键缺席虽然等效，但请求体形状稳着，读日志的人少一个
+ * 要记的特例。
+ */
+export function overridesPayload(values: Record<Protocol, string>): Record<Protocol, string> {
+  return {
+    openai: values.openai.trim(),
+    openai_responses: values.openai_responses.trim(),
+    anthropic: values.anthropic.trim(),
+  }
+}
+
+/** 编辑值与库里的路径覆盖是否不同（trim 后比，空白差不算改动）。 */
+export function overridesDirty(
+  saved: Partial<Record<Protocol, string>> | null | undefined,
+  values: Record<Protocol, string>,
+): boolean {
+  const next = overridesPayload(values)
+  return PROTOCOL_ORDER.some((p) => (saved?.[p] ?? '').trim() !== next[p])
+}
+
 // ── 渠道预设目录（#181）────────────────────────────────────────────────────
 
 /** 预设的每一套地址：无 plans 时顶层那份就是唯一一套（id 与 name 为空串）。 */
